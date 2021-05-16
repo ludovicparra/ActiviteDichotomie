@@ -1,0 +1,11 @@
+min = 1
+max = 99
+#pour proposer une valeur, utilisez la fonction proposer(valeur)
+#... Par exemple proposer(5)
+#... ou proposer(max)
+#Cette fonction renvoie soit "=" si on a trouvé la solution, "+" si le nombre mystere est plus grand que le proposé
+#ou "-" si le nombre mystere est plus petit.
+resultat = "?"
+while resultat != "=":
+    # Par exemple ici resultat = proposer(5) changera la valeur de resultat en "=", "+" ou "-"
+    #selon la valeur du nombre mystere.

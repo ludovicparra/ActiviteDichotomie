@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="styles/base.css" />
+<script src="lib/brython.js"></script>
+<script src="lib/brython_stdlib.js"></script>
+  <title>Activitée</title>
+</head>
+
+<body lang='fr' onload="brython(1);">
+<script type="text/javascript">
+  init_min_js = 0
+  init_max_js = 10
+  min_js = init_min_js
+  max_js = init_max_js
+  to_guess_js = 22
+  max_chances_js = 3
+  chances_js = 3
+</script>
+
+
+<h1> Comment choisir la prochaine valeur </h1>
+
+<p>
+Instructions pour l'exercice :
+</p>
+<p>Si on cherche une valeur et qu'on sait qu'elle est supérieure a 10 et inférieure a 20, quel calcul effectuez vous pour choisir un nombre a proposer ?</p>
+
+<button onclick="suite()">Plus d'aide !</button>
+
+<p id="suite" style="visibility: hidden">
+  En considérant le code python suivant proposez une valeur pour la variable proposition ce servant des variables sup et inf qui représentent les valeurs vues plus haut.
+
+<br/>
+sup = 10
+<br/>
+inf = 20
+<br/>
+proposition = ...
+  <button onclick="suite2()">Plus d'aide !</button></p>
+
+<p id="suite2" style="visibility: hidden">
+  Si on propose stocke la valeur '15' dans la variable 'proposition' et qu'on nous réponds que le chiffre mystere est plus grand que 'proposition'<br/>
+  Comment peut-on changer la valeur de la variable 'inf' ? <br/>
+  <button onclick="verif()">Verification !</button>
+</p>
+
+<a href="page-4.html"> Retour a l'activitée </a>
+<script>
+  function suite(){
+    document.querySelector("#suite").style["visibility"] = "visible"
+  }
+  function suite2(){
+    document.querySelector("#suite2").style["visibility"] = "visible"
+  }
+  function verif(){
+    alert("On peut proposer 'inf = proposition + 1' Car on sait que la valeur minimale sera forcément plus grande que la valeur testée.")
+  }
+</script>
+<script src="lib/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<!--script>
+  var editor = ace.edit("editor");
+  editor.setTheme("ace/theme/monokai");
+  editor.session.setMode("ace/mode/python");
+</script-->
+</body>
+</html>

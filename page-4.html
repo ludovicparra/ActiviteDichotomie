@@ -1,0 +1,268 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="styles/base.css" />
+<script src="lib/brython.js"></script>
+<script src="lib/brython_stdlib.js"></script>
+  <title>Activitée</title>
+</head>
+
+<body lang='fr' onload="brython(1);">
+<script type="text/javascript">
+  init_min_js = 0
+  init_max_js = 100
+  min_js = init_min_js
+  max_js = init_max_js
+  tries_js = 10
+  to_guess_js = 22
+</script>
+
+<script type="text/python">
+from browser import document, alert, window, html, timer
+from browser.local_storage import storage
+import sys
+import math
+import random
+
+####stdout and stderr redirecter####
+class MyOutput:
+  def __init__(self, err):
+    if err:
+     self.console = document["console-error"]
+    else:
+     self.console = document["console"]
+    self.err = err
+  def write(self, text):
+    self.console.text += text
+    if self.err:
+      error = document.getElementById('console-error')
+      error.style.display = "inline"
+sys.stdout = MyOutput(False)
+sys.stderr = MyOutput(True)
+init_min = window.init_min_js
+init_max = window.init_max_js
+max = window.max_js
+min = window.min_js
+tries = window.tries_js
+print(window.tries_js)
+max_tries = 10
+to_guess = window.to_guess_js
+clock = 0
+val_stack = []
+
+####Maxline tracer####
+def make_max_line_tracer(maxlines):
+  lines = 0
+  def tracer(frame, event, arg):
+    nonlocal lines
+    if event == 'line':
+      lines += 1
+      if lines >= maxlines:
+        raise TimeoutError
+    return tracer
+  return tracer
+####BEGIN PROG####
+def initialiser():
+  global min, max
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  make_bar()
+  min = window.min_js
+  max = window.max_js
+  write_text(min, False)
+  write_text(max, True)
+  update_value()
+
+def reinitialiser(event):
+  global to_guess
+  document["console-error"].textContent = ""
+  document["console"].textContent = ""
+  window.min_js = window.init_min_js
+  window.max_js = window.init_max_js
+  window.to_guess_js = random.randint(1,99)
+  to_guess = window.to_guess_js
+  window.tries_js = max_tries
+  initialiser()
+
+def executer(event):
+  global min,max
+  # recup le code dans l'editeur
+  # TODO : ajouter une option pour recuperer du code en plus / L'afficher sur l'éditeur
+  code = window.editor.getValue();
+  storage['code'] = code
+  min = window.min_js
+  max = window.max_js
+  sys.settrace(make_max_line_tracer(1000)) # increase to allow longer execution
+  try:
+  	exec(code)
+  except TimeoutError:
+	print("L'exécution prend trop de temps, abandon.", file=sys.stderr)
+	sys.settrace(make_max_line_tracer(100000))
+  finally:
+    sys.settrace(make_max_line_tracer(100000))
+
+canvas = document["anim"]
+ctx = canvas.getContext("2d")
+canvas.width = int(document["animhold"].width)
+canvas.height = int(document["animhold"].height)
+width = canvas.width
+height = canvas.height
+
+
+def proposer(val):
+  global clock, val_stack
+  tries = window.tries_js
+  if tries <= 0:
+    timer.set_timeout(perdu, 250*clock+1)
+    return "="
+  else:
+    val_stack.append(val)
+    timer.set_timeout(value_try, 250*clock)
+    tries = tries - 1
+    print("t",tries)
+    window.tries_js = tries
+    print(window.tries_js)
+    clock +=1
+    if val == to_guess:
+      return "="
+    elif val < to_guess:
+      return "+"
+
+  return "-"
+
+
+def value_try():
+  global min,max, val_stack
+  val = val_stack.pop(0)
+  if val < to_guess and val > min:
+    print("plus grand que " +str(val))
+    min = val
+    window.min_js = val
+  elif val > to_guess and val < max:
+    print("plus petit que " +str(val))
+    max = val
+    window.max_js = val
+  elif val == to_guess:
+    print("BRAVO !")
+  else:
+    print("Veuillez choisir un nombre valide")
+  update_value()
+  update_bar()
+  if val == to_guess:
+    bravo()
+
+####helper funct####
+def update_value():
+  ctx.clearRect(0, height/2, canvas.width, canvas.height*1/10)
+  ctx.clearRect(0, 0, canvas.width, canvas.height*4/10)
+  write_text(min,False)
+  write_text(max,True)
+  ctx.fillText("reste " + str(window.tries_js) + " chances.", width/2, height/10)
+
+def bravo():
+  ctx.fillStyle = "rgb(255,180,0)"
+  ctx.font = "1.2em arial"
+  ctx.textAlign = "center"
+  val = "Bravo le nombre était " + str(to_guess) + "!"
+  ctx.fillText(val, width/2, height*9/10)
+
+def perdu():
+  ctx.fillStyle = "rgb(200,150,0)"
+  ctx.font = "1.1em arial"
+  ctx.textAlign = "center"
+  val = "Plus de chances, le nombre était " + str(to_guess) + "."
+  ctx.fillText(val, width/2, height*9/10)
+
+def write_text(val,sup):
+  ctx.fillStyle = "rgb(200,200,200)"
+  ctx.font = "1em arial"
+  ctx.textAlign = "center"
+  if sup:
+    valw = "nb<" + str(val)
+    ctx.fillText(valw, width*1/10 + val/(init_min+init_max)*width*0.8, height*6/10)
+  else:
+    valw = "nb>" + str(val)
+    ctx.fillText(valw, width*1/10 + val/(init_min+init_max)*width*0.8, height*3.8/10)
+
+def update_bar():
+  ctx.fillStyle = "rgb(100,0,0)"
+  if min > init_min:
+    ctx.fillRect(width/10, height*4/10, 0.8*width*min/(init_min+init_max), height/10)
+  if max < init_max:
+    ctx.fillRect(width*9/10, height*4/10, -0.8*width*(init_max-max)/(init_min+init_max), height/10)
+def make_bar():
+  ctx.fillStyle = "rgb(0,100,0)"
+  ctx.fillRect(width/10, height*4/10, width*8/10, height/10)
+  ctx.stroke()
+
+document["boutonexec"].bind("click", executer)
+document["boutoninit"].bind("click", reinitialiser)
+initialiser()
+def gogo():
+  window.editor.setValue(storage['code'])
+if storage['code'] != None:
+  print(storage['code'])
+  timer.set_timeout(gogo, 250)
+</script>
+
+
+
+<h1> Activité sur la recherche de valeur </h1>
+
+<p>
+Instructions pour l'exercice : Le but de cet exercice est de ce servir de la fonction proposer(val) pour trouver le nombre mystere. <br/>
+  Pour ce faire la fonction proposer(val) renvoie la lettre '-' si le nombre recherché est plus petit.
+  <br/> '+' s'il est plus grand et '=' quand on a trouvé.
+  <br/> La partie est perdue au bout de 10 tentatives.
+  <br/> Une fois la partie perdue il faut réinitialiser.
+  <br/> Le code que vous modifiez ici est sauvegardé automatiquement lors de l'execution.
+  <br/> Si vous voulez récupérer le code fourni par défaut il est disponible dans le fichier texte fourni avec le TP.
+  <br/> Vous pouvez commencer par essayer d'appeler la fonction proposer(val) avec une valeur de votre choix au lieu de 'val'.
+  <br/> Si vous êtes coincés, n'hésitez pas a cliquer sur le lien 'Aide!' ou a poser une question a votre professeur.
+</p>
+
+
+<div id="cont">
+  <!-- EDITOR -->
+  <div id="editor">min = 1
+max = 99
+#pour proposer une valeur, utilisez la fonction proposer(valeur)
+#... Par exemple proposer(5)
+#... ou proposer(max)
+#Cette fonction renvoie soit "=" si on a trouvé la solution, "+" si le nombre mystere est plus grand que le proposé
+#ou "-" si le nombre mystere est plus petit.
+resultat = "?"
+while resultat != "=":
+    # Par exemple ici resultat = proposer(5) changera la valeur de resultat en "=", "+" ou "-"
+    #selon la valeur du nombre mystere.
+</div>
+  <!-- ANIMATION/DISPLAY -->
+  <div id="animhold">
+    <canvas id="anim">
+
+    </canvas>
+  </div>
+</div>
+<div id="Buttons">
+  <p>
+  <button id="boutonexec">Exécuter</button> <button id="boutoninit">Réinitialiser</button>
+  </p>
+</div>
+<!-- OUTPUTS -->
+<div id="output">
+  <p>
+    Sortie:
+  </p>
+  <textarea id="console" disabled=true rows="5" cols="80"></textarea>
+  <textarea id="console-error" disabled=true rows="5" cols="80" ></textarea>
+</div>
+
+<a href="page-3.html"> Aide ! </a>
+<script src="lib/src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+  var editor = ace.edit("editor");
+  editor.setTheme("ace/theme/monokai");
+  editor.session.setMode("ace/mode/python");
+</script>
+</body>
+</html>
